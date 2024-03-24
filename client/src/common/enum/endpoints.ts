@@ -1,13 +1,12 @@
-import { ENV } from '@/common/enum/env'
-
 const AuthEndpoints = {
-  LOGIN: `${ENV.API}/auth/login`,
-  REFRESH: `${ENV.API}/auth/refresh`,
-  REGISTER: `${ENV.API}/auth/register`
+  LOGIN: `/auth/login`,
+  REFRESH: `/auth/refresh`,
+  REGISTER: `/auth/register`,
+  LOGIN_AUTH0: (code: string) => `/auth/login/auth0/${code}`
 } as const
 
-const UserEnpoints = {
-  INFO: `${ENV.API}/user/info`
+const UserEndpoints = {
+  INFO: `/user/info`
 } as const
 
-export { AuthEndpoints, UserEnpoints }
+export { AuthEndpoints, UserEndpoints }

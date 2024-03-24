@@ -1,12 +1,16 @@
 <script setup lang="ts">
-const props = defineProps(['modelValue'])
+defineProps<{
+  disabled: boolean
+  modelValue: string
+}>()
 const emit = defineEmits(['update:modelValue'])
 </script>
 
 <template>
   <input
     type="text"
-    :value="props.modelValue"
+    :disabled="disabled"
+    :value="modelValue"
     @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />
 </template>

@@ -2,6 +2,7 @@ use std::env;
 use std::sync::OnceLock;
 
 use anyhow::anyhow;
+use url::Url;
 
 pub fn config() -> &'static Config {
     static INSTANCE: OnceLock<Config> = OnceLock::new();
@@ -22,6 +23,19 @@ pub struct Config {
     pub SERVER: ServerConfig,
 }
 
+#[allow(non_snake_case)]
+pub struct OauthConfig {
+    pub AUDIENCE: Url,
+    pub SERVER: Url,
+    pub TOKEN: Url,
+    pub API: Url,
+    pub USER_INFO: Url,
+
+    pub CLIENT_ID: String,
+    pub CLIENT_SECRET: String,
+    pub REDIRECT_URI: String,
+}
+
 impl ConfigLoader for Config {
     fn load() -> anyhow::Result<Config> {
         Ok(Config {
@@ -31,24 +45,24 @@ impl ConfigLoader for Config {
     }
 }
 
-#[allow(non_snake_case)]
-pub struct OauthConfig {
-    pub SERVER: String,
-    pub AUDIENCE: String,
-    pub CLIENT_ID: String,
-    pub CLIENT_SECRET: String,
-}
-
 impl ConfigLoader for OauthConfig {
     fn load() -> anyhow::Result<Self>
     where
         Self: Sized,
     {
+        let audience = Url::parse(&get_env("AUTH0_AUDIENCE")?)?;
+        let server = Url::parse(&get_env("AUTH0_SERVER")?)?;
         Ok(OauthConfig {
-            SERVER: get_env("OAUTH_SERVER")?,
-            AUDIENCE: get_env("OAUTH_AUDIENCE")?,
-            CLIENT_ID: get_env("OAUTH_CLIENT_ID")?,
-            CLIENT_SECRET: get_env("OAUTH_CLIENT_SECRET")?,
+            TOKEN: server.join("oauth/token")?,
+            USER_INFO: audience.join("userinfo")?,
+            API: audience.join("api/v2/")?,
+
+            AUDIENCE: audience,
+            SERVER: server,
+
+            CLIENT_ID: get_env("AUTH0_CLIENT_ID")?,
+            CLIENT_SECRET: get_env("AUTH0_CLIENT_SECRET")?,
+            REDIRECT_URI: get_env("AUTH0_REDIRECT_URI")?,
         })
     }
 }
@@ -66,9 +80,7 @@ impl ConfigLoader for ServerConfig {
         let port: u16 = get_env("SERVER_PORT")?
             .parse()
             .map_err(|_| anyhow!("Can not parse port to u16"))?;
-        Ok(ServerConfig {
-            PORT: port,
-        })
+        Ok(ServerConfig { PORT: port })
     }
 }
 

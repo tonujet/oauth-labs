@@ -25,11 +25,10 @@ pub fn get_token_from_header(header: &str) -> anyhow::Result<&str> {
 pub struct Claims {
     pub iss: String,
     pub sub: String,
-    pub aud: String,
+    pub aud: Vec<String>,
     pub iat: usize,
     pub exp: usize,
     pub scope: String,
-    pub gty: String,
     pub azp: String,
 }
 
@@ -38,7 +37,7 @@ pub async fn decode_token(token: &str) -> anyhow::Result<TokenData<Claims>> {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).await?;
     let mut validation = Validation::new(Algorithm::RS256);
-    validation.set_audience(&[&config().OAUTH.AUDIENCE]);
+    validation.set_audience(&[config().OAUTH.USER_INFO.as_str(), config().OAUTH.API.as_str()]);
     let token_message: TokenData<Claims> =
         jsonwebtoken::decode(&token, &DecodingKey::from_rsa_pem(&buffer)?, &validation)?;
     Ok(token_message)

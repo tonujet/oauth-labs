@@ -11,7 +11,7 @@ use crate::service::auth_service::AuthTokens;
 use crate::ApiState;
 
 pub fn routes() -> Vec<Route> {
-    routes![login, logout, refresh, register]
+    routes![login, logout, refresh, register, login_auth0]
 }
 
 #[post("/logout")]
@@ -25,10 +25,16 @@ async fn login(
     state: &State<ApiState>,
 ) -> Result<Json<AuthTokens>, Conflict<String>> {
     let tokens = auth_service::login(&dto, &state.http_client).await;
-    match tokens {
-        Ok(tokens) => Ok(Json(tokens)),
-        Err(e) => Err(Conflict(e.to_string())),
-    }
+    TokensWrapper(tokens).into()
+}
+
+#[post("/login/auth0/<code>")]
+async fn login_auth0(
+    code: &str,
+    state: &State<ApiState>,
+) -> Result<Json<AuthTokens>, Conflict<String>> {
+    let tokens = auth_service::login_auth0(code, &state.http_client).await;
+    TokensWrapper(tokens).into()
 }
 
 #[post("/register", format = "json", data = "<dto>")]
@@ -37,10 +43,7 @@ async fn register(
     state: &State<ApiState>,
 ) -> Result<Json<AuthTokens>, Conflict<String>> {
     let tokens = auth_service::register(&dto.0, &state.http_client).await;
-    match tokens {
-        Ok(tokens) => Ok(Json(tokens)),
-        Err(e) => Err(Conflict(e.to_string())),
-    }
+    TokensWrapper(tokens).into()
 }
 
 #[post("/refresh", format = "json", data = "<tokens>")]
@@ -49,10 +52,7 @@ async fn refresh(
     state: &State<ApiState>,
 ) -> Result<Json<AuthTokens>, Conflict<String>> {
     let tokens = auth_service::refresh(tokens.0, &state.http_client).await;
-    match tokens {
-        Ok(tokens) => Ok(Json(tokens)),
-        Err(e) => Err(Conflict(e.to_string())),
-    }
+    TokensWrapper(tokens).into()
 }
 
 #[derive(Serialize, Deserialize, Debug, Validate)]
@@ -75,3 +75,15 @@ pub struct RegisterDto<'r> {
     #[validate(length(min = 3, max = 50))]
     pub username: &'r str,
 }
+
+struct TokensWrapper(anyhow::Result<AuthTokens>);
+
+impl From<TokensWrapper> for Result<Json<AuthTokens>, Conflict<String>> {
+    fn from(wrapper: TokensWrapper) -> Self {
+        match wrapper.0 {
+            Ok(tokens) => Ok(Json(tokens)),
+            Err(e) => Err(Conflict(e.to_string())),
+        }
+    }
+}
+

@@ -1,27 +1,28 @@
 <script setup lang="ts">
-import { userStore } from '@/stores/UserStore'
+import { userStore } from '@/stores/userStore'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
-import { fetch_user_info } from '@/service/auth'
+import { fetchUserInfo } from '@/service/auth'
 import SpinnerComp from '@/components/common/SpinnerComp.vue'
+import { routes } from '@/common/enum/routes'
 
 const { user, logged } = storeToRefs(userStore())
 const { logout } = userStore()
 
 const guest_token = ref('')
-
 const creation_date = ref('')
-const loading_date = ref(false)
+const loading = ref(false)
+
 const get_creation_date = () => {
-  loading_date.value = true
-  return fetch_user_info(guest_token.value)
+  loading.value = true
+  return fetchUserInfo(guest_token.value)
     .then((user) => {
       creation_date.value = new Date(user.created_at).toDateString()
     })
-    .catch((e) => {
+    .catch(() => {
       creation_date.value = 'Invalid token :('
-      console.log(e)
-    }).finally(() => loading_date.value = false)
+    })
+    .finally(() => (loading.value = false))
 }
 </script>
 
@@ -29,7 +30,7 @@ const get_creation_date = () => {
   <div class="page" tabindex="0" @keyup.enter="get_creation_date()">
     <div class="block">
       <div class="block_panel">
-        <div class="block_user" v-if="logged">Hello {{ user ? user.name : 'unknown' }}</div>
+        <div class="block_user" v-if="logged">Hello {{ user?.nickname }} ({{ user?.email }})</div>
         <div class="block_guest" v-else>
           <div class="block_greeting">Hello Guest</div>
           <div class="block_desc">Try guess the correct token :)</div>
@@ -59,13 +60,12 @@ const get_creation_date = () => {
         <div v-else class="status_guest">
           <div class="status_tag guest_tag">Stranger</div>
           <div class="user_created_at_block">
-            <SpinnerComp class="user_created_at_spinner" v-if="loading_date" />
+            <SpinnerComp class="user_created_at_spinner" v-if="loading" />
             <div class="user_created_at" v-else>{{ creation_date }}</div>
           </div>
-          <div>
-            <RouterLink class="block_link" to="/sign-in">Sign-in</RouterLink>
-            /
-            <RouterLink class="block_link" to="/sign-up">Sign-up</RouterLink>
+          <div class="status_links">
+            <RouterLink class="block_link" :to="routes.USER.LOGIN">Sign-in</RouterLink>
+            <RouterLink class="block_link" :to="routes.USER.REGISTER">Sign-up</RouterLink>
           </div>
         </div>
       </div>
@@ -91,11 +91,11 @@ const get_creation_date = () => {
 }
 
 .block_desc {
-  margin-bottom: 70px;
+  margin-bottom: 60px;
 }
 
 .block_panel {
-  padding: 100px 100px 80px;
+  padding: 100px 70px 70px;
   font-size: 2em;
 }
 
@@ -112,29 +112,36 @@ const get_creation_date = () => {
 }
 
 .block_link {
-  color: #ff4c00;
-  text-decoration: None;
+  font-size: 20px;
+  color: #fff;
   cursor: pointer;
+  transition: 0.1s;
+  display: block;
+  padding: 5px 3px 0;
 }
 
 .block_link:hover {
-  color: #c76136;
+  color: #e00;
 }
 
 .block_link:active {
-  color: #80665b;
+  color: #360000;
+}
+
+.status_links {
+  margin-left: 10px;
 }
 
 .status_tag {
-  padding: 2px 5px;
   border-radius: 3px;
   box-shadow: 0 1px 2px black;
   color: #fff;
   font-weight: 400;
+  padding: 3px 15px;
 }
 
 .guest_tag {
-  background: red;
+  background: #a20000;
 }
 
 .user_tag {
@@ -142,42 +149,44 @@ const get_creation_date = () => {
 }
 
 .input_label {
-  font-size: 18px;
-  color: #ff7300;
+  font-size: 20px;
+  margin-bottom: 3px;
+  color: #c98f73;
+  text-align: center;
 }
 
 .input {
-  padding: 6px;
-  font-size: 16px;
+  padding: 10px 15px;
+  font-size: 20px;
   width: 100%;
   border-radius: 3px;
-
   box-shadow: 0 1px 3px black;
 }
 
 .input_block {
   margin-bottom: 10px;
-  margin-top: -8px;
 }
 
 .input_button {
   display: block;
-  padding: 5px 10px;
+  padding: 7px;
   font-size: 18px;
   cursor: pointer;
   color: black;
-  background: #ff7300;
+  margin: 0 auto;
+  background: #c98f73;
   border-radius: 5px;
   box-shadow: 0 1px 3px black;
-  width: 100%;
+  width: 70%;
+  transition: 0.2s;
 }
 
 .input_button:hover {
-  background: #ff9100;
+  background: #885f4d;
 }
 
 .input_button:active {
-  background: #ff7300;
+  background: #fff;
 }
 
 .user_created_at {
@@ -185,7 +194,5 @@ const get_creation_date = () => {
 }
 
 .user_created_at_block {
-  margin-left: 40px;
 }
-
 </style>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { onMounted } from 'vue'
-import { userStore } from '@/stores/UserStore'
+import { onBeforeMount } from 'vue'
+import { userStore } from '@/stores/userStore'
 import HeaderComp from '@/components/main/HeaderComp.vue'
+import FooterComp from '@/components/main/FooterComp.vue'
 
 const { refresh } = userStore()
 
-onMounted(async () => {
-  await refresh()
+onBeforeMount(() => {
+  refresh()
 })
 </script>
 
@@ -20,17 +21,12 @@ onMounted(async () => {
       <RouterView class="main_router" />
     </main>
     <footer>
-      <!--            footer-->
+      <FooterComp />
     </footer>
   </div>
 </template>
 
 <style>
-header,
-footer {
-  display: block;
-}
-
 .main-wrapper {
   background-color: #29232e;
   display: flex;
